@@ -1,1 +1,3 @@
-# 1.-Elastic-Collisions
+# 2D Elastic collisions
+
+2D elastic collision simulation in Unity.
