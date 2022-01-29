@@ -40,11 +40,9 @@ public class CircleManager : MonoBehaviour
 
     CircleData[] data;
 
-    (Vector3 min, Vector3 max) worldBounds;
-
     void Start()
     {
-        (var min, var max) = worldBounds = GetWorldBouds();
+        (var min, var max) = GetWorldBouds();
 
         data = new CircleData[count];
 
@@ -92,7 +90,7 @@ public class CircleManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        (var min, var max) = worldBounds;
+        (var min, var max) = GetWorldBouds();
 
         // Move each circle position by velocity over time
         for (int i = 0, c = data.Length; i < c; ++i)
