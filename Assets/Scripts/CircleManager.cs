@@ -1,7 +1,11 @@
+using System;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class CircleManager : MonoBehaviour
 {
+    public int CircleCount { get => count; set => count = Math.Max(value, 0); }
+
     [SerializeField]
     GameObject circlePrefab;
 
@@ -38,58 +42,15 @@ public class CircleManager : MonoBehaviour
         public Transform transform;
     }
 
-    CircleData[] data;
+    CircleData[] data = new CircleData[0];
 
-    void Start()
-    {
-        (var min, var max) = GetWorldBouds();
-
-        data = new CircleData[count];
-
-        var propertyBlock = new MaterialPropertyBlock();
-
-        for (var i = 0; i < count; ++i)
-        {
-            var radius = Random.Range(minRadius, maxRadius);
-
-            var x = Random.Range(min.x + radius, max.x - radius);
-            var y = Random.Range(min.y + radius, max.y - radius);
-
-            var position = new Vector3(x, y, 0);
-
-            var initialDirection = Random.insideUnitCircle.normalized;
-            var initialSpeed = Random.Range(minSpeed, maxSpeed);
-
-            var velocity = initialDirection * initialSpeed;
-
-            var diameter = 2.0f * radius;
-            var circleInstance = Instantiate(circlePrefab, position, Quaternion.identity, transform).transform;
-            circleInstance.localScale = new Vector3(diameter, diameter, 1);
-
-            // HSV colour graph
-            // https://images.app.goo.gl/dqW2rSfFv3r1zzPR9
-
-            var hue = Random.value;
-            var circleColour = Color.HSVToRGB(hue, 1.0f, 1.0f);
-
-            // MaterialPropertyBlock allows using per instance colour with GPU Instancing
-            propertyBlock.SetColor("_Colour", circleColour);
-            circleInstance.gameObject.GetComponent<MeshRenderer>().SetPropertyBlock(propertyBlock);
-
-            data[i] = new CircleData
-            {
-                position = position,
-                velocity = velocity,
-                transform = circleInstance,
-                mass = diameter * diameter,
-                radius = radius
-            };
-        }
-    }
-
-    // Update is called once per frame
     void Update()
     {
+        var dataLength = data?.Length ?? 0;
+
+        if (count < dataLength) RemoveCircles();
+        else if (count > dataLength) AddCircles();
+
         (var min, var max) = GetWorldBouds();
 
         // Move each circle position by velocity over time
@@ -195,6 +156,88 @@ public class CircleManager : MonoBehaviour
             var circleData = data[i];
             circleData.transform.localPosition = circleData.position;
         }
+    }
+
+    private void AddCircles()
+    {
+        var existingData = data ?? new CircleData[0];
+
+        var dataLength = existingData.Length;
+
+        var numberOfCirclesToAdd = Math.Max(count - dataLength, 0);
+
+        if (numberOfCirclesToAdd == 0) return;
+
+        var newData = new CircleData[count];
+        var newDataSpan = new Span<CircleData>(newData);
+
+        new Span<CircleData>(existingData).CopyTo(newDataSpan);
+
+        (var min, var max) = GetWorldBouds();
+
+        var propertyBlock = new MaterialPropertyBlock();
+
+        for (var i = dataLength; i < count; ++i)
+        {
+            var radius = Random.Range(minRadius, maxRadius);
+
+            var x = Random.Range(min.x + radius, max.x - radius);
+            var y = Random.Range(min.y + radius, max.y - radius);
+
+            var position = new Vector3(x, y, 0);
+
+            var initialDirection = Random.insideUnitCircle.normalized;
+            var initialSpeed = Random.Range(minSpeed, maxSpeed);
+
+            var velocity = initialDirection * initialSpeed;
+
+            var diameter = 2.0f * radius;
+            var circleInstance = Instantiate(circlePrefab, position, Quaternion.identity, transform).transform;
+            circleInstance.localScale = new Vector3(diameter, diameter, 1);
+
+            // HSV colour graph
+            // https://images.app.goo.gl/dqW2rSfFv3r1zzPR9
+
+            var hue = Random.value;
+            var circleColour = Color.HSVToRGB(hue, 1.0f, 1.0f);
+
+            // MaterialPropertyBlock allows using per instance colour with GPU Instancing
+            propertyBlock.SetColor("_Colour", circleColour);
+            circleInstance.gameObject.GetComponent<MeshRenderer>().SetPropertyBlock(propertyBlock);
+
+            newData[i] = new CircleData
+            {
+                position = position,
+                velocity = velocity,
+                transform = circleInstance,
+                mass = diameter * diameter,
+                radius = radius
+            };
+        }
+
+        data = newData;
+    }
+
+    private void RemoveCircles()
+    {
+        var existingData = data ?? new CircleData[0];
+
+        var dataLength = existingData.Length;
+
+        var numberOfCirclesToRemove = Math.Max(dataLength - count, 0);
+
+        if (numberOfCirclesToRemove == 0) return;
+
+        var numberOfCirclesToKeep = Math.Max(dataLength - numberOfCirclesToRemove, 0);
+
+        var circlesToRemove = new Span<CircleData>(existingData, numberOfCirclesToKeep, numberOfCirclesToRemove);
+
+        for (int i = 0, c = circlesToRemove.Length; i < c; ++i)
+        {
+            Destroy(circlesToRemove[i].transform.gameObject);
+        }
+
+        data = new Span<CircleData>(existingData, 0, numberOfCirclesToKeep).ToArray();
     }
 
     static (Vector3 min, Vector3 max) GetWorldBouds()
