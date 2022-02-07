@@ -5,6 +5,7 @@ using Random = UnityEngine.Random;
 public class CircleManager : MonoBehaviour
 {
     public int CircleCount { get => count; set => count = Math.Max(value, 0); }
+    public bool Intercollisions { get => collisionDetection; set => collisionDetection = value; }
 
     [SerializeField]
     GameObject circlePrefab;
@@ -30,6 +31,8 @@ public class CircleManager : MonoBehaviour
     [SerializeField]
     bool collisionDetection = false;
 
+    bool isEnabled = false;
+
     struct CircleData
     {
         public Vector3 position;
@@ -44,8 +47,20 @@ public class CircleManager : MonoBehaviour
 
     CircleData[] data = new CircleData[0];
 
+    private void OnEnable()
+    {
+        isEnabled = true;
+    }
+
+    private void OnDisable()
+    {
+        isEnabled = false;
+    }
+
     void Update()
     {
+        if (!isEnabled) return;
+
         var dataLength = data?.Length ?? 0;
 
         if (count < dataLength) RemoveCircles();

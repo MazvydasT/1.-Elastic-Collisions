@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(Slider))]
 public class CameraSlider : MonoBehaviour
 {
     Slider slider;
@@ -17,5 +18,10 @@ public class CameraSlider : MonoBehaviour
         slider.value = cameraTransform.position.z;
 
         slider.onValueChanged.AddListener(v => cameraTransform.position = new Vector3(0, 0, v));
+    }
+
+    private void OnDestroy()
+    {
+        slider.onValueChanged.RemoveAllListeners();
     }
 }

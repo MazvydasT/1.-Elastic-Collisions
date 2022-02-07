@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(Slider))]
 public class CountSlider : MonoBehaviour
 {
     Slider slider;
@@ -17,5 +18,10 @@ public class CountSlider : MonoBehaviour
         slider.value = circleManager.CircleCount;
 
         slider.onValueChanged.AddListener(v => circleManager.CircleCount = (int)v);
+    }
+
+    private void OnDestroy()
+    {
+        slider.onValueChanged.RemoveAllListeners();
     }
 }
